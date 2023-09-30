@@ -11,10 +11,14 @@ from django.core.mail import send_mail
 class Token(models.Model):
     token = models.CharField(max_length=255, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    ip_address = models.CharField(max_length=15)
     expired = models.DateTimeField(default="2000-01-01")
 
     otp = models.PositiveSmallIntegerField(null=True, blank=True)
     otp_expired = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("user", "ip_address",)
 
     @classmethod
     def get_user_token(cls, user, ip_address):
@@ -24,6 +28,7 @@ class Token(models.Model):
         token_str = str(ip_address) + str(user.username)
         token, _ = Token.objects.get_or_create(
             user=user,
+            ip_address=ip_address,
             token=make_password(token_str, salt=getattr(settings, 'TOKEN_SALT', "asdf"))
         )
         return token

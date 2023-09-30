@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 
 from rest_framework import generics, status, views
 from rest_framework.permissions import IsAuthenticated
@@ -44,9 +46,9 @@ class LoginView(generics.GenericAPIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         else:
-            user_ip = request.META.get("REMOTE_ADDR", None)
-            if user_ip:
-                token = Token.get_user_token(user=user, ip_address=str(user_ip))
+            ip_address = request.META.get("REMOTE_ADDR", None)
+            if ip_address:
+                token = Token.get_user_token(user=user, ip_address=str(ip_address))
                 # Check for otp
                 user_otp = ser.validated_data.get("otp", None)
                 if not user_otp:
@@ -93,3 +95,35 @@ class MeView(views.APIView):
             "email": request.user.email,
             "username": request.user.username,
         }, status=status.HTTP_200_OK)
+
+
+class UserCurrentDevicesView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        ip_address = request.META.get("REMOTE_ADDR", None)
+        if ip_address:
+            tokens = Token.objects.filter(user=request.user, expired__gt=timezone.now())
+            context = [{
+                "ip_address": token.ip_address,
+            } for token in tokens]
+            return Response(context, status=status.HTTP_200_OK)
+
+        return Response(
+            {
+                "err": "Invalid ip address",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class DeleteDeviceTokenView(views.APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.DeleteDeviceTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        ser = serializers.DeleteDeviceTokenSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        token = get_object_or_404(Token, user=request.user, ip_address=ser.validated_data["ip_address"])
+        token.delete()
+        return Response({"msg": "Deleted"}, status=status.HTTP_200_OK)

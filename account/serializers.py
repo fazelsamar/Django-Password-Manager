@@ -51,3 +51,7 @@ class UserSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(style={"input_type": "password"}, write_only=True)
     otp = serializers.IntegerField(required=False)
+
+
+class DeleteDeviceTokenSerializer(serializers.Serializer):
+    ip_address = serializers.CharField()
