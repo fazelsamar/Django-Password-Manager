@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import generics, status, views
 from rest_framework.permissions import IsAuthenticated
@@ -29,9 +29,14 @@ class LoginView(generics.GenericAPIView):
             )
 
             if not user.check_password(ser.validated_data.get("password")):
-                raise
+                return Response(
+                    {
+                        "msg": "No active account found with the given credentials",
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
-        except Exception as e:
+        except ObjectDoesNotExist:
             return Response(
                 {
                     "msg": "No active account found with the given credentials",
@@ -39,18 +44,38 @@ class LoginView(generics.GenericAPIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         else:
-            # Check for user has already a token
             user_ip = request.META.get("REMOTE_ADDR", None)
             if user_ip:
                 token = Token.get_user_token(user=user, ip_address=str(user_ip))
-                return Response(
-                    {
-                        "username": user.username,
-                        "token": str(token.token),
-                        "expired": token.expired,
-                    },
-                    status=status.HTTP_200_OK,
-                )
+                # Check for otp
+                user_otp = ser.validated_data.get("otp", None)
+                if not user_otp:
+                    msg = token.set_otp()
+                    return Response(
+                        {
+                            "msg": msg,
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+                else:
+                    if token.check_otp(user_otp):
+                        token = token.extend_token_and_invalid_otp()
+                        return Response(
+                            {
+                                "username": user.username,
+                                "token": str(token.token),
+                                "expired": token.expired,
+                            },
+                            status=status.HTTP_200_OK,
+                        )
+                    else:
+                        return Response(
+                            {
+                                "msg": "Invalid otp",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
             else:
                 return Response(
                     {

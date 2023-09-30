@@ -49,16 +49,4 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(style={"input_type": "password"}, write_only=True)
-
-
-class GetUserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(style={"input_type": "password"}, write_only=True)
-    permissions = serializers.SerializerMethodField("get_permissions")
-
-    class Meta:
-        model = User
-        fields = ["username", "password", "permissions", "is_superuser"]
-        read_only_fields = ["is_superuser", "password", "permissions"]
-
-    def get_permissions(self, obj):
-        return obj.permissions.values_list("title", flat=True)
+    otp = serializers.IntegerField(required=False)
