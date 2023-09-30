@@ -11,10 +11,11 @@ User = get_user_model()
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(style={"input_type": "password"}, write_only=True)
+    email = serializers.EmailField(required=True)
 
     class Meta:
         model = User
-        fields = ["username", "password"]
+        fields = ["email", "username", "password"]
 
     def validate(self, attrs):
         user = User(**attrs)

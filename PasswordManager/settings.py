@@ -137,3 +137,10 @@ REST_FRAMEWORK = {
 }
 
 TOKEN_SALT = "kjnsakerfjbgersgj;vJBSLBV65e45475l;k;kres;gesgnjsaebrgv!@#^&*()sdvas"
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 2525
+EMAIL_HOST_USER = ""
+EMAIL_HOST_PASSWORD = ""
+DEFAULT_FROM_EMAIL = "test@example.com"

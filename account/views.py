@@ -50,7 +50,7 @@ class LoginView(generics.GenericAPIView):
                 # Check for otp
                 user_otp = ser.validated_data.get("otp", None)
                 if not user_otp:
-                    msg = token.set_otp()
+                    msg = token.sent_otp()
                     return Response(
                         {
                             "msg": msg,
@@ -58,11 +58,11 @@ class LoginView(generics.GenericAPIView):
                         status=status.HTTP_200_OK,
                     )
                 else:
-                    if token.check_otp(user_otp):
+                    msg = token.check_otp(user_otp)
+                    if not msg:
                         token = token.extend_token_and_invalid_otp()
                         return Response(
                             {
-                                "username": user.username,
                                 "token": str(token.token),
                                 "expired": token.expired,
                             },
@@ -71,7 +71,7 @@ class LoginView(generics.GenericAPIView):
                     else:
                         return Response(
                             {
-                                "msg": "Invalid otp",
+                                "msg": msg,
                             },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
@@ -89,4 +89,7 @@ class MeView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        return Response({"username": request.user.username}, status=status.HTTP_200_OK)
+        return Response({
+            "email": request.user.email,
+            "username": request.user.username,
+        }, status=status.HTTP_200_OK)
