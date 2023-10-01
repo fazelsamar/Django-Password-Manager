@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
 
     'account.apps.AccountConfig',
+    'password.apps.PasswordConfig',
 ]
 
 MIDDLEWARE = [
