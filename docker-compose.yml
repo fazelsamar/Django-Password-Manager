@@ -6,3 +6,23 @@ services:
     ports:
       - '5000:80'
       - '2525:25'
+
+
+  postgres:
+    image: postgres:15.3-alpine
+    hostname: ${DATABASE_HOST}
+    container_name: eccomerce-postgres
+    command: -p ${DATABASE_PORT} # Change the default port
+    env_file:
+      - ".env"
+    expose:
+      - "${DATABASE_PORT}"
+    ports:
+      - "${DATABASE_PORT}:${DATABASE_PORT}"
+    restart: always
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+
+volumes:
+  postgres:
