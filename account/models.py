@@ -14,7 +14,7 @@ class Token(models.Model):
     ip_address = models.CharField(max_length=15)
     expired = models.DateTimeField(default="2000-01-01")
 
-    otp = models.PositiveSmallIntegerField(null=True, blank=True)
+    otp = models.PositiveIntegerField(null=True, blank=True)
     otp_expired = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -45,7 +45,7 @@ class Token(models.Model):
         if self.otp_expired and self.otp_expired >= timezone.now():
             return "Otp already sent"
         random.seed()
-        self.otp = random.randint(11111, 99999)
+        self.otp = random.randint(111111, 999999)
         expiration_seconds = getattr(settings, 'OTP_EXPIRATION_SECONDS', 60)
         self.otp_expired = timezone.now() + timezone.timedelta(seconds=expiration_seconds)
         self.save()
