@@ -45,7 +45,7 @@ class Token(models.Model):
         if self.otp_expired and self.otp_expired >= timezone.now():
             return "Otp already sent"
         random.seed()
-        self.otp = random.randint(111111, 999999)
+        self.otp = random.randint(11111, 99999)
         expiration_seconds = getattr(settings, 'OTP_EXPIRATION_SECONDS', 60)
         self.otp_expired = timezone.now() + timezone.timedelta(seconds=expiration_seconds)
         self.save()
