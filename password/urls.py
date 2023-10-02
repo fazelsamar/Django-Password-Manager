@@ -12,4 +12,6 @@ router.register('collections', views.PasswordCollectionViewSet, basename='collec
 collection_router = routers.NestedSimpleRouter(router, 'collections', lookup='collection')
 collection_router.register('passwords', views.PasswordViewSet, basename='collection-passwords')
 
-urlpatterns = router.urls + collection_router.urls
+urlpatterns = router.urls + collection_router.urls + [
+    path("get-password-by-token/<uuid:token_id>/", views.GetPasswordByToken.as_view(), name="get_password_by_token"),
+]
