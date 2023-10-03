@@ -7,6 +7,8 @@ from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.core.mail import send_mail
 
+from .tasks import send_push_notification
+
 
 class Token(models.Model):
     token = models.CharField(max_length=255, unique=True)
@@ -39,6 +41,7 @@ class Token(models.Model):
         self.otp = None
         self.otp_expired = None
         self.save()
+        send_push_notification.delay(f"Logged in device with ip of: {self.ip_address}")
         return self
 
     def sent_otp(self):

@@ -1,17 +1,9 @@
 version: "3.8"
 services:
-  smtp4dev:
-    image: rnwood/smtp4dev:v3
-    restart: always
-    ports:
-      - '5000:80'
-      - '2525:25'
-
-
   postgres:
     image: postgres:15.3-alpine
     hostname: ${DATABASE_HOST}
-    container_name: eccomerce-postgres
+    container_name: PasswordManager
     command: -p ${DATABASE_PORT} # Change the default port
     env_file:
       - ".env"
@@ -22,6 +14,63 @@ services:
     restart: always
     volumes:
       - postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6.2-alpine
+    hostname: redis
+    container_name: redis
+    ports:
+      - 6379:6379
+    expose:
+      - 6379
+    restart: always
+
+  backend:
+    build:
+      context: .
+    # command: ./wait-for-it.sh postgres:5432 -- ./docker-entrypoint.sh
+    command: >
+      /bin/sh -c "
+      ./wait-for-it.sh ${DATABASE_HOST}:${DATABASE_PORT} &&
+      python manage.py migrate &&
+      python manage.py collectstatic --no-input &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./:/usr/src/app/
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./mediafiles:/usr/src/app/mediafiles
+    depends_on:
+      - postgres
+      - redis
+    expose:
+      - 8000
+
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    restart: always
+    ports:
+      - '5000:80'
+      - '2525:25'
+
+  celery:
+    build: .
+    command: celery -A PasswordManager worker --loglevel=info
+    depends_on:
+      - redis
+    volumes:
+      - .:/usr/src/app/
+
+  flower:
+    build: .
+    command: celery -A PasswordManager flower
+    depends_on:
+      - redis
+      - celery
+    ports:
+      - 5555:5555
+    volumes:
+      - .:/usr/src/app/
 
 
 volumes:
