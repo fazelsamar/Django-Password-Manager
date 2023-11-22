@@ -38,10 +38,15 @@ services:
     depends_on:
       - postgres
       - redis
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
     networks:
       - poxy-network
       - postgres-network
       - redis-network
+      - smtp-network
 
   proxy:
     image: nginx
@@ -65,7 +70,9 @@ services:
     ports:
       - '5000:80'
       - '2525:25'
-
+    networks:
+      - smtp-network  
+  
   celery:
     build: .
     command: celery -A PasswordManager worker --loglevel=info
@@ -75,8 +82,8 @@ services:
     volumes:
       - .:/usr/src/app/
     networks:
-      - redis-network
-
+      - redis-network 
+  
   flower:
     build: .
     command: celery -A PasswordManager flower
@@ -88,13 +95,14 @@ services:
     ports:
       - '5555:5555'
     volumes:
-      - .:/usr/src/app/
+      - .:/usr/src/app/ 
 
 
 volumes:
   postgres:
 
 networks:
- poxy-network:
- postgres-network:
- redis-network:
+  poxy-network:
+  postgres-network:
+  redis-network:
+  smtp-network:

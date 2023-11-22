@@ -47,6 +47,9 @@ class LoginView(generics.GenericAPIView):
             )
         else:
             ip_address = request.META.get("REMOTE_ADDR", None)
+            print(ip_address)
+            print(request.META.get("HTTP_X_REAL_IP"))
+            print(request.META.get("HTTP_X_FORWARDED_FOR"))
             if ip_address:
                 token = Token.get_user_token(user=user, ip_address=str(ip_address))
                 # Check for otp
@@ -91,10 +94,13 @@ class MeView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        return Response({
-            "email": request.user.email,
-            "username": request.user.username,
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "email": request.user.email,
+                "username": request.user.username,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class UserCurrentDevicesView(views.APIView):
@@ -104,9 +110,12 @@ class UserCurrentDevicesView(views.APIView):
         ip_address = request.META.get("REMOTE_ADDR", None)
         if ip_address:
             tokens = Token.objects.filter(user=request.user, expired__gt=timezone.now())
-            context = [{
-                "ip_address": token.ip_address,
-            } for token in tokens]
+            context = [
+                {
+                    "ip_address": token.ip_address,
+                }
+                for token in tokens
+            ]
             return Response(context, status=status.HTTP_200_OK)
 
         return Response(
@@ -124,6 +133,8 @@ class DeleteDeviceTokenView(views.APIView):
     def post(self, request, *args, **kwargs):
         ser = serializers.DeleteDeviceTokenSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        token = get_object_or_404(Token, user=request.user, ip_address=ser.validated_data["ip_address"])
+        token = get_object_or_404(
+            Token, user=request.user, ip_address=ser.validated_data["ip_address"]
+        )
         token.delete()
         return Response({"msg": "Deleted"}, status=status.HTTP_200_OK)
